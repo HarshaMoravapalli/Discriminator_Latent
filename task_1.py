@@ -1,3 +1,5 @@
+# Feeding the latent vectors from both the encoders(synthetic and real)
+
 import argparse
 
 import numpy as np
@@ -27,9 +29,9 @@ time = datetime.datetime.now().strftime("%d-%m-%H-%M")
 
 class TrainVQ:
     def __init__(self, args):
-        self.syn_model = SYN_model(args)
-        self.mainvq = VQGAN_model(args)
-        self.recon = Recon(args)
+        self.syn_model = SYN_model(args) # encoder unreal
+        self.mainvq = VQGAN_model(args)  # encoder real
+        self.recon = Recon(args)        
 
 
         self.discriminator = Discriminator(args).to(device=args.device)
