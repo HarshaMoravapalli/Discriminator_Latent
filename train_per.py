@@ -1,3 +1,5 @@
+# Image generation using perceptual loss (Instance Normalization)
+
 import argparse
 
 import numpy as np
