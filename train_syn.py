@@ -10,8 +10,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.utils import save_image
 
-from utils.utils_1 import Custom_dataset, weights_init
-from syn_module.main_vq import VQGAN_model
+from utils.utils_1 import Custom_dataset, weights_init    # Utils for dataloader
+from syn_module.main_vq import VQGAN_model                
 from syn_module.model import SYN_model
 from syn_module.Discriminator import Discriminator
 from syn_module.recon_freeze import Recon
@@ -27,14 +27,14 @@ time = datetime.datetime.now().strftime("%d-%m-%H-%M")
 
 class TrainVQ:
     def __init__(self, args):
-        self.syn_model = SYN_model(args)
-        self.mainvq = VQGAN_model(args)
-        self.recon = Recon(args)
+        self.syn_model = SYN_model(args)  # encoder part for generating synthetic image latent space
+        self.mainvq = VQGAN_model(args)   # pretrained enocder part for generating real image latent space
+        self.recon = Recon(args)          # pretrained decoder,codebook, post_quantized layers for image generation from the embeeddings from the syn_model
 
 
-        self.discriminator = Discriminator(args).to(device=args.device)
+        self.discriminator = Discriminator(args).to(device=args.device)   #Discriminator for latent space discriminations
         self.discriminator.apply(weights_init)
-        self.opt_syn, self.opt_disc = self.conf_optimizer(args)
+        self.opt_syn, self.opt_disc = self.conf_optimizer(args)         
         self.train_model(args=args)
 
     def conf_optimizer(self, args):
@@ -51,13 +51,13 @@ class TrainVQ:
     def train_model(self, args):
         transform = transforms.Compose([transforms.ToPILImage(), transforms.Resize((256, 256)), transforms.ToTensor(),
                                         transforms.Normalize([0], [1])])
-        train_data = Custom_dataset(args.real_data, args.unreal_data, transform=transform)
+        train_data = Custom_dataset(args.real_data, args.unreal_data, transform=transform)          # Custom dataset loader
         train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=False)
         total_samples = len(train_loader)*args.batch_size
         # Encoder
-        generator = self.syn_model
+        generator = self.syn_model                      
         # main
-        main_vq = self.mainvq
+        main_vq = self.mainvq                          # loading the pretrained weights from the model trained on real dataset
         lst = ['encoder', 'quant_conv']
         checkpoint = torch.load(args.checkpoints)
         pretrained_dict = {x: y for x, y in checkpoint['state_dict'].items() if x.split('.', 1)[0] in lst}
@@ -66,7 +66,7 @@ class TrainVQ:
         main_vq.requires_grad_(False)
         print('main:', main_vq.training)
 
-        recon = self.recon
+        recon = self.recon                     # loading the pretrained weights from the model trained on real dataset
         lst1 = ['post_quant_conv', 'decoder']
 
         generator = generator.to(torch.device("cuda"))
@@ -83,14 +83,14 @@ class TrainVQ:
                     real_1 = img['A'].float().to(torch.device("cuda"))
                     real_2 = img['B'].float().to(torch.device("cuda"))
 
-                    fake_lat = generator(real_2)
-                    real_lat = main_vq(real_1)
+                    fake_lat = generator(real_2)                   # latent dimension from synthetic encoder
+                    real_lat = main_vq(real_1)                     # latent dimension from real encoder
 
                     # train discriminator
                     self.discriminator.zero_grad()
                     d_real = self.discriminator(real_lat)
                     label = torch.tensor(real).expand_as(d_real).float().to(torch.device('cuda'))
-                    d_real_loss = criterion_GAN(d_real, label)
+                    d_real_loss = criterion_GAN(d_real, label)         #calculate loss
                     d_real_loss.backward()
 
                     label.fill_(fake)
