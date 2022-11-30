@@ -8,24 +8,20 @@ from modules.codebook import Codebook
 class VQGAN_model(nn.Module):
     def __init__(self,args):
         super(VQGAN_model,self).__init__()
-        '''encoder_channels = [(3,8), (8,16), (16,32), (32,64),\
-             (64, 128), (128,128), (128,256), (256,512)]
-        decoder_channels = [(512,256),(256,128),(128,128),\
-            (128,64),(64,32),(32,16),(16,8),(8,3)]'''
         self.encoder = Encoder(args).apply(self.weights_enc)
-        self.decoder = Decoder(args)
-        self.codebook =  Codebook(args)
+        #self.decoder = Decoder(args)
+        #self.codebook =  Codebook(args)
         self.quant_conv = nn.Conv2d(args.latent_dim, args.latent_dim, 1)
-        self.post_quant_conv = nn.Conv2d(args.latent_dim, args.latent_dim, 1)
+        #self.post_quant_conv = nn.Conv2d(args.latent_dim, args.latent_dim, 1)
 
 
     def forward(self, imgs):
         encoded_images = self.encoder(imgs)
         quant_conv_encoded_images = self.quant_conv(encoded_images)
-        codebook_mapping, codebook_indices, q_loss = self.codebook(quant_conv_encoded_images)
-        post_quant_conv_mapping = self.post_quant_conv(codebook_mapping)
-        decoded_images = self.decoder(post_quant_conv_mapping)
-        return decoded_images, codebook_indices, q_loss
+        #codebook_mapping, codebook_indices, q_loss = self.codebook(quant_conv_encoded_images)
+        #post_quant_conv_mapping = self.post_quant_conv(codebook_mapping)
+        #decoded_images = self.decoder(post_quant_conv_mapping)
+        return quant_conv_encoded_images
 
     @staticmethod
     def adopt_weight(disc_factor, i, threshold, value=0.):
