@@ -1,3 +1,5 @@
+# image generation using perceptual loss alone
+
 import argparse
 
 import numpy as np
